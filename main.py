@@ -29,6 +29,11 @@ class ChatResponse(BaseModel):
     content: str
 
 
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
 def get_client() -> AzureOpenAI:
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     api_key = os.getenv("AZURE_OPENAI_API_KEY")
