@@ -2,7 +2,7 @@ import azure.functions as func
 from azure.functions import AsgiMiddleware
 
 try:
-    from main import app
+    from .app import app
 except Exception as e:
     app = None
     import_error = str(e)
