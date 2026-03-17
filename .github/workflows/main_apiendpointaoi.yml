@@ -9,6 +9,7 @@ on:
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'released-package.zip'
   PYTHON_VERSION: '3.11'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
