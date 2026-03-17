@@ -4,12 +4,17 @@ import logging
 import os
 from typing import List, Optional
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AzureOpenAI
 from pydantic import BaseModel, Field
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv is not None:
+    load_dotenv()
 
 app = FastAPI(title="Azure OpenAI FastAPI")
 logger = logging.getLogger("function_app")
