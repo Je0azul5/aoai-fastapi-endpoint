@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from openai import AzureOpenAI
+from openai import APIConnectionError, APIStatusError, APITimeoutError, AzureOpenAI
 from pydantic import BaseModel, Field
 
 load_dotenv()
 
 app = FastAPI(title="Azure OpenAI FastAPI")
+logger = logging.getLogger("function_app")
 
 class ChatMessage(BaseModel):
     role: str = Field(..., description="system|user|assistant")
@@ -26,7 +28,14 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "configured": {
+            "endpoint": bool(os.getenv("AZURE_OPENAI_ENDPOINT")),
+            "api_key": bool(os.getenv("AZURE_OPENAI_API_KEY")),
+            "deployment": bool(os.getenv("AZURE_OPENAI_DEPLOYMENT")),
+        },
+    }
 
 def get_client() -> AzureOpenAI:
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -52,12 +61,31 @@ def chat(req: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail="Missing AZURE_OPENAI_DEPLOYMENT")
 
     client = get_client()
-    result = client.chat.completions.create(
-        model=deployment,
-        messages=[m.model_dump() for m in req.messages],
-        temperature=req.temperature,
-        max_tokens=req.max_tokens,
-    )
+    try:
+        result = client.chat.completions.create(
+            model=deployment,
+            messages=[m.model_dump() for m in req.messages],
+            temperature=req.temperature,
+            max_tokens=req.max_tokens,
+        )
+    except APIConnectionError as exc:
+        logger.exception("Azure OpenAI connection failed")
+        raise HTTPException(
+            status_code=502,
+            detail="Azure OpenAI connection failed",
+        ) from exc
+    except APITimeoutError as exc:
+        logger.exception("Azure OpenAI request timed out")
+        raise HTTPException(
+            status_code=504,
+            detail="Azure OpenAI request timed out",
+        ) from exc
+    except APIStatusError as exc:
+        logger.exception("Azure OpenAI returned status %s", exc.status_code)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Azure OpenAI returned status {exc.status_code}",
+        ) from exc
 
     content = result.choices[0].message.content or ""
     return ChatResponse(content=content)
