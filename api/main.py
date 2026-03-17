@@ -8,31 +8,25 @@ from fastapi import FastAPI, HTTPException
 from openai import AzureOpenAI
 from pydantic import BaseModel, Field
 
-
 load_dotenv()
 
 app = FastAPI(title="Azure OpenAI FastAPI")
 
-
 class ChatMessage(BaseModel):
     role: str = Field(..., description="system|user|assistant")
     content: str
-
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = 512
 
-
 class ChatResponse(BaseModel):
     content: str
-
 
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
-
 
 def get_client() -> AzureOpenAI:
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -50,7 +44,6 @@ def get_client() -> AzureOpenAI:
         api_key=api_key,
         api_version=api_version,
     )
-
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:

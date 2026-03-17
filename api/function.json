@@ -1,5 +1,5 @@
 {
-  "scriptFile": "main.py",
+  "scriptFile": "__init__.py",
   "bindings": [
     {
       "authLevel": "anonymous",
@@ -10,7 +10,7 @@
       "route": "{*route}"
     },
     {
-      "type": "https",
+      "type": "http",
       "direction": "out",
       "name": "$return"
     }
